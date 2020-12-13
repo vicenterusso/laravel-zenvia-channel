@@ -19,7 +19,7 @@ class CouldNotSendNotification extends \Exception
         $description = 'no description given';
 
         if ($result = json_decode($exception->getResponse()->getBody())) {
-            $description = $result->description ?: $description;
+            $description = $result->message ?: $description;
         }
 
         return new static("Zenvia responded with an error `{$statusCode} - {$description}`");

@@ -51,11 +51,10 @@ class Zenvia
     protected function httpClient()
     {
         return new HttpClient([
-            'base_uri' => 'https://api-rest.zenvia.com',
+            'base_uri' => 'https://api.zenvia.com',
             'headers' => [
                 'Content-Type'  => 'application/json',
-                'Accept'        => 'application/json',
-                'Authorization' => 'Basic ' . base64_encode(config('services.zenvia.conta') . ':' . config('services.zenvia.senha'))
+                'X-API-TOKEN'   => config('services.zenvia.token')
             ]
         ]);
     }
@@ -65,44 +64,48 @@ class Zenvia
      */
     public function sendMessage($to, $params)
     {
-        if (empty($to)) {
-            throw CouldNotSendNotification::receiverNotProvided();
-        }
-
-        if (empty($this->conta)) {
-            throw CouldNotSendNotification::contaNotProvided();
-        }
-
-        if (empty($this->senha)) {
-            throw CouldNotSendNotification::senhaNotProvided();
-        }
-
-        if(empty($this->aggregateId)){
-            throw CouldNotSendNotification::aggregateIdNotProvided();
-        }
+//        if (empty($to)) {
+//            throw CouldNotSendNotification::receiverNotProvided();
+//        }
+//
+//        if (empty($this->conta)) {
+//            throw CouldNotSendNotification::contaNotProvided();
+//        }
+//
+//        if (empty($this->senha)) {
+//            throw CouldNotSendNotification::senhaNotProvided();
+//        }
+//        if(empty($this->aggregateId)){
+//            throw CouldNotSendNotification::aggregateIdNotProvided();
+//        }
 
         try {
+
             $data = [
-                'sendSmsRequest' => [
-                    'from'              => $params['from'] ?: $this->from,
-                    'to'                => $to,
-                    'msg'               => Str::limit($params['msg'], 160),
-                    'id'                => $params['id'],
-                    'schedule'          => $params['schedule'] ?: '',
-                    'callbackOption'    => $params['callbackOption'] ?: 'NONE',
-                    'aggregateId'       => $this->aggregateId,
-                    'flashSms'          => $params['flashSms'] ?: true,
+                'from' => config('services.zenvia.from'),
+                'to' => $to,
+                'contents' => [
+                    0 => [
+                        'type' => 'text',
+                        'text' => $params['msg'],
+                    ],
                 ],
             ];
 
+            $client = new HttpClient([
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'X-API-TOKEN' => config('services.zenvia.token')
+                ]
+            ]);
 
+            $response = $client->post('https://api.zenvia.com/v2/channels/sms/messages',
+                [
+                    'body' => json_encode($data)
+                ]
+            );
 
-            if ($this->pretend == true) {
-                \Log::debug('Pretending to send a SMS to: ' . $to . ' with content: ' . $this->msg($params));
-                return;
-            }
-
-            return $this->httpClient()->post('/services/send-sms', ['json' => $data]);
+            return $response;
         } catch (ClientException $exception) {
             throw CouldNotSendNotification::serviceRespondedWithAnError($exception);
         } catch (\Exception $exception) {

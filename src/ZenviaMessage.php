@@ -75,13 +75,7 @@ class ZenviaMessage
     public function toArray()
     {
         return [
-            'from'           => $this->from,
-            'to'             => $this->to,
-            'msg'            => $this->msg,
-            'id'             => $this->id,
-            'schedule'       => $this->schedule,
-            'callbackOption' => $this->callbackOption,
-            'flashSms'       => $this->flashSms,
+            'msg' => $this->msg,
         ];
     }
 }
